@@ -96,7 +96,7 @@ rem ============================================================================
 rem -- Check for py ------------------------------------------------------------
 rem ============================================================================
 
-where py 1>nul
+where python 1>nul
 if %errorlevel% neq 0 goto error_py
 
 rem Build for Python 2
@@ -105,11 +105,11 @@ if %BUILD_FOR_PYTHON2%==true (
     goto py2_not_supported
 )
 
-rem Build for Python 2
+rem Build for Python 3
 rem
 if %BUILD_FOR_PYTHON3%==true (
     echo Building Python API for Python 3.
-    py -3 setup.py bdist_egg
+    python setup.py bdist_egg
     if %errorlevel% neq 0 goto error_build_egg
 )
 
