@@ -23,10 +23,14 @@
 			]
 		}
 	],
-	"Plugins": [
-		{
-			"Name": "PhysXVehicles",
-			"Enabled": true
-		}
-	]
+    "Plugins": [
+        {
+            "Name": "PhysXVehicles",
+            "Enabled": true
+        },
+        {
+            "Name": "Carsim",
+            "Enabled": true
+        }
+    ]
 }

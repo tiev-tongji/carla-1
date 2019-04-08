@@ -54,7 +54,10 @@ public class Carla : ModuleRules
         "Landscape",
         "PhysXVehicles",
         "Slate",
-        "SlateCore"
+        "SlateCore",
+        "CarSim"    //不加会导致UnrealBuildTool找不到CarSim的头文件
+                    //Carla.uplugin中不加CarSim会有Warning（Carla插件不依赖CarSim插件，但是Carla模块依赖）
+                    //从.uproject重新生成项目文件让Unreal自动解决文件包含问题
         // ... add private dependencies that you statically link with here ...
       }
       );
