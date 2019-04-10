@@ -10,6 +10,7 @@ class UAgentComponent;
 class UTrafficSignAgentComponent;
 class UVehicleAgentComponent;
 class UWalkerAgentComponent;
+class UCarSimAgentComponent;
 
 class IAgentComponentVisitor
 {
@@ -20,4 +21,6 @@ public:
   virtual void Visit(const UVehicleAgentComponent &) = 0;
 
   virtual void Visit(const UWalkerAgentComponent &) = 0;
+
+  virtual void Visit(const UCarSimAgentComponent &) = 0;
 };
