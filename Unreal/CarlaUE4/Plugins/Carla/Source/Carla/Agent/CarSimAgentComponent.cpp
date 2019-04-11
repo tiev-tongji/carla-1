@@ -3,9 +3,11 @@
 #include "Carla.h"
 #include "CarSimAgentComponent.h"
 
+//为什么在VehicleAgentComponent中不需要添加声明也正确编译？
+#include "Vehicle/CarSimVehicleAIController.h"
 static bool IsPlayer(const ACarlaCarSimVehicle &InVehicle)
 {
-	auto *Controller = Cast<AWheeledVehicleAIController>(InVehicle.GetController());
+	auto *Controller = Cast<ACarSimVehicleAIController>(InVehicle.GetController());
 	return (Controller != nullptr) && Controller->IsPossessingThePlayer();
 }
 
