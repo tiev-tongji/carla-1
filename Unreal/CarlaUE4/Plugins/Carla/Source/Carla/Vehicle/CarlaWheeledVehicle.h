@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include "WheeledVehicle.h"
+#include "CarsimPawn.h"
 
 #include "Vehicle/CarlaWheeledVehicleState.h"
 #include "Vehicle/VehicleControl.h"
 #include "Vehicle/VehicleInputPriority.h"
 #include "Vehicle/VehiclePhysicsControl.h"
-#include "WheeledVehicleMovementComponent4W.h"
+#include "CarSimMovementComponent.h"
 
 #include "CoreMinimal.h"
 
@@ -23,7 +23,7 @@ class UVehicleAgentComponent;
 
 /// Base class for CARLA wheeled vehicles.
 UCLASS()
-class CARLA_API ACarlaWheeledVehicle : public AWheeledVehicle
+class CARLA_API ACarlaWheeledVehicle : public ACarsimPawn
 {
   GENERATED_BODY()
 
@@ -33,7 +33,7 @@ class CARLA_API ACarlaWheeledVehicle : public AWheeledVehicle
   /// @{
 public:
 
-  ACarlaWheeledVehicle(const FObjectInitializer &ObjectInitializer);
+  ACarlaWheeledVehicle();
 
   ~ACarlaWheeledVehicle();
 
