@@ -69,7 +69,7 @@ float ACarlaWheeledVehicle::GetMaximumSteerAngle() const
 	const auto *FrontWheel = Wheels[0];
 	check(FrontWheel != nullptr);
 	return FrontWheel->SteerAngle;*/
-	return 0;
+	return 40;
 }
 
 // =============================================================================
@@ -78,11 +78,11 @@ float ACarlaWheeledVehicle::GetMaximumSteerAngle() const
 
 void ACarlaWheeledVehicle::FlushVehicleControl()
 {
-	/*auto *MovementComponent = GetCarSimMovement();
+	auto *MovementComponent = GetCarSimMovement();
 	MovementComponent->SetThrottleInput(InputControl.Control.Throttle);
 	MovementComponent->SetSteeringInput(InputControl.Control.Steer);
 	MovementComponent->SetBrakeInput(InputControl.Control.Brake);
-	MovementComponent->SetHandbrakeInput(InputControl.Control.bHandBrake);
+	/*MovementComponent->SetHandbrakeInput(InputControl.Control.bHandBrake);
 	if (LastAppliedControl.bReverse != InputControl.Control.bReverse)
 	{
 		MovementComponent->SetUseAutoGears(!InputControl.Control.bReverse);
@@ -95,11 +95,11 @@ void ACarlaWheeledVehicle::FlushVehicleControl()
 		{
 			MovementComponent->SetTargetGear(InputControl.Control.Gear, true);
 		}
-	}
+	}*/
 	InputControl.Control.Gear = MovementComponent->GetCurrentGear();
 	InputControl.Control.bReverse = InputControl.Control.Gear < 0;
 	LastAppliedControl = InputControl.Control;
-	InputControl.Priority = EVehicleInputPriority::INVALID;*/
+	InputControl.Priority = EVehicleInputPriority::INVALID;
 }
 
 void ACarlaWheeledVehicle::SetThrottleInput(const float Value)
