@@ -190,7 +190,6 @@
 
 - `actor`
 - `other_actor`
-- `normal_impulse`
 
 ## `carla.LaneInvasionEvent(carla.SensorData)`
 

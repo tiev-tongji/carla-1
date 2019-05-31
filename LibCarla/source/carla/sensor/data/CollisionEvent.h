@@ -28,8 +28,7 @@ namespace data {
     explicit CollisionEvent(const RawData &data)
       : Super(data),
         _self_actor(Serializer::DeserializeRawData(data).self_actor),
-        _other_actor(Serializer::DeserializeRawData(data).other_actor),
-        _normal_impulse(Serializer::DeserializeRawData(data).normal_impulse) {}
+        _other_actor(Serializer::DeserializeRawData(data).other_actor) {}
 
   public:
 
