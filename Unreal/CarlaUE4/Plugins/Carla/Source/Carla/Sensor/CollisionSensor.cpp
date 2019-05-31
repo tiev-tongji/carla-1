@@ -34,7 +34,8 @@ void ACollisionSensor::SetOwner(AActor *NewOwner)
 
   if (NewOwner != nullptr)
   {
-    NewOwner->OnActorHit.AddDynamic(this, &ACollisionSensor::OnCollisionEvent);
+	UE_LOG(LogCarla, Log, TEXT("ACollisionSensor:Set Owner Name:%s"), *NewOwner->GetName());
+    NewOwner->OnActorBeginOverlap.AddDynamic(this, &ACollisionSensor::OnCollisionEvent);
   }
 }
 
@@ -43,7 +44,6 @@ void ACollisionSensor::BeginPlay()
   Super::BeginPlay();
 
   auto *GameMode = Cast<ATheNewCarlaGameModeBase>(GetWorld()->GetAuthGameMode());
-
   if (GameMode == nullptr)
   {
     UE_LOG(LogCarla, Error, TEXT("ACollisionSensor: Game mode not compatible with this sensor"));
@@ -52,23 +52,19 @@ void ACollisionSensor::BeginPlay()
   Episode = &GameMode->GetCarlaEpisode();
 }
 
-void ACollisionSensor::OnCollisionEvent(
-    AActor *Actor,
-    AActor *OtherActor,
-    FVector NormalImpulse,
-    const FHitResult &Hit)
+void ACollisionSensor::OnCollisionEvent(AActor *SelfActor, AActor *OtherActor)
 {
-  if ((Episode != nullptr) && (Actor != nullptr) && (OtherActor != nullptr))
+  UE_LOG(LogCarla, Log, TEXT("ACollisionSensor:Collide with %s"), *OtherActor->GetName());
+  // if no need to send collsion with RoutePlanner(shown on client side:Unknown),
+  // add judge:&& !Cast<ARoutePlanner>(OtherActor)
+  if ((Episode != nullptr) && (OtherActor != nullptr))
   {
-    constexpr float TO_METERS = 1e-2;
-    NormalImpulse *= TO_METERS;
-    GetDataStream(*this).Send(
-        *this,
-        Episode->SerializeActor(Episode->FindOrFakeActor(Actor)),
-        Episode->SerializeActor(Episode->FindOrFakeActor(OtherActor)),
-        carla::geom::Vector3D{NormalImpulse.X, NormalImpulse.Y, NormalImpulse.Z});
+	GetDataStream(*this).Send(
+		*this,
+		Episode->SerializeActor(Episode->FindOrFakeActor(SelfActor)),
+		Episode->SerializeActor(Episode->FindOrFakeActor(OtherActor)));
     // record the collision event
     if (Episode->GetRecorder()->IsEnabled())
-      Episode->GetRecorder()->AddCollision(Actor, OtherActor);
+      Episode->GetRecorder()->AddCollision(SelfActor, OtherActor);
   }
 }
