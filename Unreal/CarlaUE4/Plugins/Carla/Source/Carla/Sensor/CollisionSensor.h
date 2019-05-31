@@ -31,9 +31,5 @@ public:
 private:
 
   UFUNCTION()
-  void OnCollisionEvent(
-      AActor *Actor,
-      AActor *OtherActor,
-      FVector NormalImpulse,
-      const FHitResult &Hit);
+  void OnCollisionEvent(AActor *SelfActor, AActor *OtherActor);
 };

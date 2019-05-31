@@ -30,9 +30,7 @@ namespace s11n {
 
       rpc::Actor other_actor;
 
-      geom::Vector3D normal_impulse;
-
-      MSGPACK_DEFINE_ARRAY(self_actor, other_actor, normal_impulse)
+      MSGPACK_DEFINE_ARRAY(self_actor, other_actor)
     };
 
     constexpr static auto header_offset = 0u;
@@ -45,9 +43,8 @@ namespace s11n {
     static Buffer Serialize(
         const SensorT &,
         rpc::Actor self_actor,
-        rpc::Actor other_actor,
-        geom::Vector3D normal_impulse) {
-      return MsgPack::Pack(Data{self_actor, other_actor, normal_impulse});
+        rpc::Actor other_actor) {
+      return MsgPack::Pack(Data{self_actor, other_actor});
     }
 
     static SharedPtr<SensorData> Deserialize(RawData &&data);
