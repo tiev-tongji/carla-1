@@ -343,7 +343,7 @@ float AWheeledVehicleAIController::GoToNextTargetLocation(FVector &Direction)
 
   Vehicle->SetAIVehicleState(ECarlaWheeledVehicleState::FollowingFixedRoute);
   return Steering;*/
-	return 0;//TODO: 寻求获取前轮位置的新方法
+	return 0;//TODO: 鑾峰彇瀹為檯鍓嶈儙涓績鍧愭爣
 }
 
 float AWheeledVehicleAIController::CalcStreeringValue(FVector &direction)

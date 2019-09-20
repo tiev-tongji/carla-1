@@ -13,6 +13,8 @@
 #include "Carla/Game/CarlaGameInstance.h"
 #include "Carla/Game/CarlaGameModeBase.h"
 
+#include "Carla/Traffic/RoutePlanner.h"
+
 ACollisionSensor::ACollisionSensor(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -43,7 +45,7 @@ void ACollisionSensor::OnCollisionEvent(AActor* SelfActor, AActor* OtherActor)
 	UE_LOG(LogCarla, Log, TEXT("ACollisionSensor:Collide with %s"), *OtherActor->GetName());
 	// if no need to send collsion with RoutePlanner(shown on client side:Unknown),
 	// add judge:&& !Cast<ARoutePlanner>(OtherActor)
-	if ((SelfActor != nullptr) && (OtherActor != nullptr))
+	if ((SelfActor != nullptr) && (OtherActor != nullptr) && !Cast<ARoutePlanner>(OtherActor))
 	{
 		const auto& Episode = GetEpisode();
 		GetDataStream(*this).Send(
