@@ -14,43 +14,44 @@
 #include "Carla/Game/CarlaGameModeBase.h"
 
 ACollisionSensor::ACollisionSensor(const FObjectInitializer& ObjectInitializer)
-  : Super(ObjectInitializer)
+	: Super(ObjectInitializer)
 {
-  PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = false;
 }
 
 FActorDefinition ACollisionSensor::GetSensorDefinition()
 {
-  return UActorBlueprintFunctionLibrary::MakeGenericSensorDefinition(
-      TEXT("other"),
-      TEXT("collision"));
+	return UActorBlueprintFunctionLibrary::MakeGenericSensorDefinition(
+		TEXT("other"),
+		TEXT("collision"));
 }
 
-void ACollisionSensor::SetOwner(AActor *NewOwner)
+void ACollisionSensor::SetOwner(AActor* NewOwner)
 {
-  Super::SetOwner(NewOwner);
+	Super::SetOwner(NewOwner);
 
-  /// @todo Deregister previous owner if there was one.
+	/// @todo Deregister previous owner if there was one.
 
-  if (NewOwner != nullptr)
-  {
-	UE_LOG(LogCarla, Log, TEXT("ACollisionSensor:Set Owner Name:%s"), *NewOwner->GetName());
-    NewOwner->OnActorBeginOverlap.AddDynamic(this, &ACollisionSensor::OnCollisionEvent);
-  }
+	if (NewOwner != nullptr)
+	{
+		UE_LOG(LogCarla, Log, TEXT("ACollisionSensor:Set Owner Name:%s"), *NewOwner->GetName());
+		NewOwner->OnActorBeginOverlap.AddDynamic(this, &ACollisionSensor::OnCollisionEvent);
+	}
 }
 void ACollisionSensor::OnCollisionEvent(AActor* SelfActor, AActor* OtherActor)
 {
-  UE_LOG(LogCarla, Log, TEXT("ACollisionSensor:Collide with %s"), *OtherActor->GetName());
-  // if no need to send collsion with RoutePlanner(shown on client side:Unknown),
-  // add judge:&& !Cast<ARoutePlanner>(OtherActor)
-  if ((Episode != nullptr) && (OtherActor != nullptr))
-  {
-	GetDataStream(*this).Send(
-		*this,
-		Episode->SerializeActor(Episode->FindOrFakeActor(SelfActor)),
-		Episode->SerializeActor(Episode->FindOrFakeActor(OtherActor)));
-    // record the collision event
-    if (Episode->GetRecorder()->IsEnabled())
-      Episode->GetRecorder()->AddCollision(SelfActor, OtherActor);
-  }
+	UE_LOG(LogCarla, Log, TEXT("ACollisionSensor:Collide with %s"), *OtherActor->GetName());
+	// if no need to send collsion with RoutePlanner(shown on client side:Unknown),
+	// add judge:&& !Cast<ARoutePlanner>(OtherActor)
+	if ((SelfActor != nullptr) && (OtherActor != nullptr))
+	{
+		const auto& Episode = GetEpisode();
+		GetDataStream(*this).Send(
+			*this,
+			Episode.SerializeActor(Episode.FindOrFakeActor(SelfActor)),
+			Episode.SerializeActor(Episode.FindOrFakeActor(OtherActor)));
+		// record the collision event
+		if (Episode.GetRecorder()->IsEnabled())
+			Episode.GetRecorder()->AddCollision(SelfActor, OtherActor);
+	}
 }

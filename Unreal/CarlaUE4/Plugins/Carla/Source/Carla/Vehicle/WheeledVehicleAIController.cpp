@@ -280,6 +280,7 @@ FVehicleControl AWheeledVehicleAIController::TickAutopilotController()
 
 float AWheeledVehicleAIController::GoToNextTargetLocation(FVector &Direction)
 {
+	/*
   // Get middle point between the two front wheels.
   const auto CurrentLocation = [&]() {
     const auto &Wheels = Vehicle->GetVehicleMovementComponent()->Wheels;
@@ -341,7 +342,8 @@ float AWheeledVehicleAIController::GoToNextTargetLocation(FVector &Direction)
   }
 
   Vehicle->SetAIVehicleState(ECarlaWheeledVehicleState::FollowingFixedRoute);
-  return Steering;
+  return Steering;*/
+	return 0;//TODO: 寻求获取前轮位置的新方法
 }
 
 float AWheeledVehicleAIController::CalcStreeringValue(FVector &direction)

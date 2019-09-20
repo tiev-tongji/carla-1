@@ -52,8 +52,6 @@ namespace data {
     client::detail::ActorVariant _self_actor;
 
     client::detail::ActorVariant _other_actor;
-
-    geom::Vector3D _normal_impulse;
   };
 
 } // namespace data

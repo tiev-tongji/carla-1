@@ -26,9 +26,6 @@ ACarlaWheeledVehicle::ACarlaWheeledVehicle() :
 	VehicleBounds->SetHiddenInGame(true);
 	VehicleBounds->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 
-  VehicleAgentComponent = CreateDefaultSubobject<UVehicleAgentComponent>(TEXT("VehicleAgentComponent"));
-  VehicleAgentComponent->SetupAttachment(RootComponent);
-
   //GetVehicleMovementComponent()->bReverseAsBrake = false;
 }
 
@@ -37,10 +34,10 @@ ACarlaWheeledVehicle::~ACarlaWheeledVehicle() {}
 void ACarlaWheeledVehicle::BeginPlay()
 {
   Super::BeginPlay();
-
+  /*
   float FrictionScale = 3.5f;
 
-  UWheeledVehicleMovementComponent4W *Vehicle4W = Cast<UWheeledVehicleMovementComponent4W>(
+  UCarSimMovementComponent4W *Vehicle4W = Cast<UCarSimMovementComponent4W>(
       GetVehicleMovementComponent());
   check(Vehicle4W != nullptr);
 
@@ -80,6 +77,7 @@ void ACarlaWheeledVehicle::BeginPlay()
   }
 
   Vehicle4W->WheelSetups = NewWheelSetups;
+  */
 }
 
 // =============================================================================
@@ -118,7 +116,7 @@ float ACarlaWheeledVehicle::GetMaximumSteerAngle() const
 	const auto *FrontWheel = Wheels[0];
 	check(FrontWheel != nullptr);
 	return FrontWheel->SteerAngle;*/
-	return 40;
+	return 40;//TODO:获取实际最大转向角
 }
 
 // =============================================================================
@@ -188,6 +186,7 @@ void ACarlaWheeledVehicle::SetHandbrakeInput(const bool Value)
 
 TArray<float> ACarlaWheeledVehicle::GetWheelsFrictionScale()
 {
+	/*
   UWheeledVehicleMovementComponent4W *Vehicle4W = Cast<UWheeledVehicleMovementComponent4W>(
       GetVehicleMovement());
   check(Vehicle4W != nullptr);
@@ -198,10 +197,13 @@ TArray<float> ACarlaWheeledVehicle::GetWheelsFrictionScale()
     WheelsFrictionScale.Add(Wheel->TireConfig->GetFrictionScale());
   }
   return WheelsFrictionScale;
+  */
+	return { 0.1 ,0.1,0.1,0.1 };//TODO:返回实际值
 }
 
 void ACarlaWheeledVehicle::SetWheelsFrictionScale(TArray<float> &WheelsFrictionScale)
 {
+	/*
   UWheeledVehicleMovementComponent4W *Vehicle4W = Cast<UWheeledVehicleMovementComponent4W>(
       GetVehicleMovement());
   check(Vehicle4W != nullptr);
@@ -211,26 +213,28 @@ void ACarlaWheeledVehicle::SetWheelsFrictionScale(TArray<float> &WheelsFrictionS
   {
     Vehicle4W->Wheels[i]->TireConfig->SetFrictionScale(WheelsFrictionScale[i]);
   }
+  */
 }
 
 FVehiclePhysicsControl ACarlaWheeledVehicle::GetVehiclePhysicsControl()
 {
-  UCarSimMovementComponent4W *Vehicle4W =
-	  Cast<UCarSimMovementComponent4W>(GetCarSimMovement());
+  UCarSimMovementComponent *Vehicle4W =
+	  Cast<UCarSimMovementComponent>(GetCarSimMovement());
   check(Vehicle4W != nullptr);
 
 	FVehiclePhysicsControl PhysicsControl;
 
-	//// Engine Setup
-	//PhysicsControl.TorqueCurve = Vehicle4W->EngineSetup.TorqueCurve.EditorCurveData;
-	//PhysicsControl.MaxRPM = Vehicle4W->EngineSetup.MaxRPM;
-	//PhysicsControl.MOI = Vehicle4W->EngineSetup.MOI;
-	//PhysicsControl.DampingRateFullThrottle = Vehicle4W->EngineSetup.DampingRateFullThrottle;
-	//PhysicsControl.DampingRateZeroThrottleClutchEngaged =
-	//	Vehicle4W->EngineSetup.DampingRateZeroThrottleClutchEngaged;
-	//PhysicsControl.DampingRateZeroThrottleClutchDisengaged =
-	//	Vehicle4W->EngineSetup.DampingRateZeroThrottleClutchDisengaged;
 	/*
+  // Engine Setup
+  PhysicsControl.TorqueCurve = Vehicle4W->EngineSetup.TorqueCurve.EditorCurveData;
+  PhysicsControl.MaxRPM = Vehicle4W->EngineSetup.MaxRPM;
+  PhysicsControl.MOI = Vehicle4W->EngineSetup.MOI;
+  PhysicsControl.DampingRateFullThrottle = Vehicle4W->EngineSetup.DampingRateFullThrottle;
+  PhysicsControl.DampingRateZeroThrottleClutchEngaged =
+      Vehicle4W->EngineSetup.DampingRateZeroThrottleClutchEngaged;
+  PhysicsControl.DampingRateZeroThrottleClutchDisengaged =
+      Vehicle4W->EngineSetup.DampingRateZeroThrottleClutchDisengaged;
+
   // Transmission Setup
   PhysicsControl.bUseGearAutoBox = Vehicle4W->TransmissionSetup.bUseGearAutoBox;
   PhysicsControl.GearSwitchTime = Vehicle4W->TransmissionSetup.GearSwitchTime;
@@ -251,21 +255,21 @@ FVehiclePhysicsControl ACarlaWheeledVehicle::GetVehiclePhysicsControl()
   }
 
   PhysicsControl.ForwardGears = ForwardGears;
-  */
-	//// Vehicle Setup
-	//PhysicsControl.Mass = Vehicle4W->Mass;
-	//PhysicsControl.DragCoefficient = Vehicle4W->DragCoefficient;
+
+  // Vehicle Setup
+  PhysicsControl.Mass = Vehicle4W->Mass;
+  PhysicsControl.DragCoefficient = Vehicle4W->DragCoefficient;
 
   // Center of mass offset (Center of mass is always zero vector in local
   // position)
-  //UPrimitiveComponent *UpdatedPrimitive = Cast<UPrimitiveComponent>(Vehicle4W->UpdatedComponent);
-  //check(UpdatedPrimitive != nullptr);
+  UPrimitiveComponent *UpdatedPrimitive = Cast<UPrimitiveComponent>(Vehicle4W->UpdatedComponent);
+  check(UpdatedPrimitive != nullptr);
 
-  //PhysicsControl.CenterOfMass = UpdatedPrimitive->BodyInstance.COMNudge;
+  PhysicsControl.CenterOfMass = UpdatedPrimitive->BodyInstance.COMNudge;
 
-	//// Transmission Setup
-	//PhysicsControl.SteeringCurve = Vehicle4W->SteeringCurve.EditorCurveData;
-	/*
+  // Transmission Setup
+  PhysicsControl.SteeringCurve = Vehicle4W->SteeringCurve.EditorCurveData;
+
   // Wheels Setup
   TArray<FWheelPhysicsControl> Wheels;
 
@@ -287,7 +291,7 @@ FVehiclePhysicsControl ACarlaWheeledVehicle::GetVehiclePhysicsControl()
     Wheels.Add(PhysicsWheel);
   }
   
-	//PhysicsControl.Wheels = Wheels;
+  PhysicsControl.Wheels = Wheels;
   */
 	return PhysicsControl;
 }
@@ -297,19 +301,19 @@ void ACarlaWheeledVehicle::ApplyVehiclePhysicsControl(const FVehiclePhysicsContr
 	UCarSimMovementComponent *Vehicle4W =
 		CastChecked<UCarSimMovementComponent>(GetCarSimMovement());
 	check(Vehicle4W != nullptr);
+/*
+  // Engine Setup
+  Vehicle4W->EngineSetup.TorqueCurve.EditorCurveData = PhysicsControl.TorqueCurve;
+  Vehicle4W->EngineSetup.MaxRPM = PhysicsControl.MaxRPM;
 
-	//// Engine Setup
-	//Vehicle4W->EngineSetup.TorqueCurve.EditorCurveData = PhysicsControl.TorqueCurve;
-	//Vehicle4W->EngineSetup.MaxRPM = PhysicsControl.MaxRPM;
+  Vehicle4W->EngineSetup.MOI = PhysicsControl.MOI;
 
-	//Vehicle4W->EngineSetup.MOI = PhysicsControl.MOI;
+  Vehicle4W->EngineSetup.DampingRateFullThrottle = PhysicsControl.DampingRateFullThrottle;
+  Vehicle4W->EngineSetup.DampingRateZeroThrottleClutchEngaged =
+      PhysicsControl.DampingRateZeroThrottleClutchEngaged;
+  Vehicle4W->EngineSetup.DampingRateZeroThrottleClutchDisengaged =
+      PhysicsControl.DampingRateZeroThrottleClutchDisengaged;
 
-  //Vehicle4W->EngineSetup.DampingRateFullThrottle = PhysicsControl.DampingRateFullThrottle;
-  //Vehicle4W->EngineSetup.DampingRateZeroThrottleClutchEngaged =
-  //    PhysicsControl.DampingRateZeroThrottleClutchEngaged;
-  //Vehicle4W->EngineSetup.DampingRateZeroThrottleClutchDisengaged =
-  //    PhysicsControl.DampingRateZeroThrottleClutchDisengaged;
-	/*
   // Transmission Setup
   Vehicle4W->TransmissionSetup.bUseGearAutoBox = PhysicsControl.bUseGearAutoBox;
   Vehicle4W->TransmissionSetup.GearSwitchTime = PhysicsControl.GearSwitchTime;
@@ -332,10 +336,10 @@ void ACarlaWheeledVehicle::ApplyVehiclePhysicsControl(const FVehiclePhysicsContr
   Vehicle4W->TransmissionSetup.ForwardGears = ForwardGears;
 
 
-  */
-	//// Vehicle Setup
-	//Vehicle4W->Mass = PhysicsControl.Mass;
-	//Vehicle4W->DragCoefficient = PhysicsControl.DragCoefficient;
+
+  // Vehicle Setup
+  Vehicle4W->Mass = PhysicsControl.Mass;
+  Vehicle4W->DragCoefficient = PhysicsControl.DragCoefficient;
 
   // Center of mass
   UPrimitiveComponent *UpdatedPrimitive = Cast<UPrimitiveComponent>(Vehicle4W->UpdatedComponent);
@@ -343,9 +347,9 @@ void ACarlaWheeledVehicle::ApplyVehiclePhysicsControl(const FVehiclePhysicsContr
 
   UpdatedPrimitive->BodyInstance.COMNudge = PhysicsControl.CenterOfMass;
 
-	//// Transmission Setup
-	//Vehicle4W->SteeringCurve.EditorCurveData = PhysicsControl.SteeringCurve;
-  /*
+  // Transmission Setup
+  Vehicle4W->SteeringCurve.EditorCurveData = PhysicsControl.SteeringCurve;
+
   // Recreate Physics State only for vehicle setup
   Vehicle4W->RecreatePhysicsState();
 
@@ -370,5 +374,5 @@ void ACarlaWheeledVehicle::ApplyVehiclePhysicsControl(const FVehiclePhysicsContr
     Vehicle4W->PVehicle->mWheelsSimData.setWheelData(i, PWheelData);
     Vehicle4W->Wheels[i]->TireConfig->SetFrictionScale(PhysicsControl.Wheels[i].TireFriction);
   }
-  */
+*/
 }
