@@ -211,7 +211,7 @@ void export_sensor_data() {
 
   class_<csd::CollisionEvent, bases<cs::SensorData>, boost::noncopyable, boost::shared_ptr<csd::CollisionEvent>>("CollisionEvent", no_init)
     .add_property("actor", &csd::CollisionEvent::GetActor)
-    .add_property("other_actor", &csd::CollisionEvent::GetOtherActor))
+    .add_property("other_actor", &csd::CollisionEvent::GetOtherActor)
     .def(self_ns::str(self_ns::self))
   ;
 

@@ -42,11 +42,6 @@ namespace data {
       return _other_actor.Get(GetEpisode());
     }
 
-    /// Normal impulse result of the collision.
-    const geom::Vector3D &GetNormalImpulse() const {
-      return _normal_impulse;
-    }
-
   private:
 
     client::detail::ActorVariant _self_actor;
