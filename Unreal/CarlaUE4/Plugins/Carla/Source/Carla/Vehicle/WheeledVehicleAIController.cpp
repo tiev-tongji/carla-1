@@ -15,6 +15,8 @@
 #include "GameFramework/Pawn.h"
 #include "WheeledVehicleMovementComponent.h"
 
+#include <vector>
+
 // =============================================================================
 // -- Static local methods -----------------------------------------------------
 // =============================================================================
@@ -232,6 +234,7 @@ FVehicleControl AWheeledVehicleAIController::TickAutopilotController()
 	FVector Direction;
 
 	float Steering;
+	UE_LOG(LogCarla, Log, TEXT("Target location number: %d"), TargetLocations.size());
 	if (!TargetLocations.empty())
 	{
 		Steering = GoToNextTargetLocation(Direction);
@@ -280,12 +283,48 @@ FVehicleControl AWheeledVehicleAIController::TickAutopilotController()
 
 float AWheeledVehicleAIController::GoToNextTargetLocation(FVector &Direction)
 {
+	UCarSimMovementComponent *vehicleMovement = Vehicle->GetCarSimMovement();
+
+	// GetWheelTransform：axleIndex为0、1分别代表前轮、后轮，axleSide为0、1分别代表左轮、右轮
+	// 同为前轮/后轮时，左轮与右轮的Roll相反
+	// GetTireTransform：tire(ij0)与tire(ij1)完全相同，且与wheel(ij)相同
 	/*
+	int numUnits = vehicleMovement->GetNumUnits();	// 1 unit
+	int numAxles = vehicleMovement->GetNumAxles(0);	// first unit has 2 axles
+	UE_LOG(LogCarla, Log, TEXT("NumUnits: %d, First unit has NumAxles: %d"), numUnits, numAxles);
+
+	int i, j, k;
+	FTransform t;
+	FString str;
+	for (i = 0; i < 2; i++)
+		for (j = 0; j < 2; j++)
+		{
+			t = vehicleMovement->GetWheelTransform(0, i, j);
+			str = t.ToHumanReadableString();
+			UE_LOG(LogCarla, Log, TEXT("Wheel%d%d: %s"), i, j, *str);
+		}
+	for (i = 0; i < 2; i++)
+		for (j = 0; j < 2; j++)
+			for (k = 0; k < 2; k++)
+			{
+				t = vehicleMovement->GetTireTransform(0, i, j, k);
+				str = t.ToHumanReadableString();
+				UE_LOG(LogCarla, Log, TEXT("Tire%d%d%d: %s\n"), i, j, k, *str);
+			}
+	*/
+
   // Get middle point between the two front wheels.
   const auto CurrentLocation = [&]() {
+	  check(vehicleMovement->GetNumUnits() > 0 && vehicleMovement->GetNumAxles(0) > 1);
+	  FTransform t[2];
+	  t[0] = vehicleMovement->GetWheelTransform(0, 0, 0);
+	  t[1] = vehicleMovement->GetWheelTransform(0, 0, 1);
+	  return (t[0].GetLocation() + t[1].GetLocation()) / 2.0f;
+	/*
     const auto &Wheels = Vehicle->GetVehicleMovementComponent()->Wheels;
     check((Wheels.Num() > 1) && (Wheels[0u] != nullptr) && (Wheels[1u] != nullptr));
     return (Wheels[0u]->Location + Wheels[1u]->Location) / 2.0f;
+	*/
   } ();
 
   const auto Target = [&]() {
@@ -342,8 +381,7 @@ float AWheeledVehicleAIController::GoToNextTargetLocation(FVector &Direction)
   }
 
   Vehicle->SetAIVehicleState(ECarlaWheeledVehicleState::FollowingFixedRoute);
-  return Steering;*/
-	return 0;//TODO: 获取实际前胎中心坐标
+  return Steering;
 }
 
 float AWheeledVehicleAIController::CalcStreeringValue(FVector &direction)
