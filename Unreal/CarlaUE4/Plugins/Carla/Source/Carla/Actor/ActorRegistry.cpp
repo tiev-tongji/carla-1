@@ -13,13 +13,16 @@
 #include "Carla/Traffic/TrafficLightBase.h"
 #include "Carla/Util/BoundingBoxCalculator.h"
 
+#include "Carla/Vehicle/CarlaWheeledVehicle.h"
+#include "Carla/Vehicle/CarSimCarlaVehicle.h"
+
 static FActorView::ActorType FActorRegistry_GetActorType(const FActorView &View)
 {
   if (!View.IsValid())
   {
     return FActorView::ActorType::INVALID;
   }
-  else if (nullptr != Cast<ACarlaWheeledVehicle>(View.GetActor()))
+  else if (nullptr != Cast<ACarlaWheeledVehicle>(View.GetActor()) || nullptr != Cast<ACarSimCarlaVehicle>(View.GetActor()))
   {
     return FActorView::ActorType::Vehicle;
   }

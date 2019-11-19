@@ -9,6 +9,7 @@
 
 #include "Util/RandomEngine.h"
 #include "Vehicle/CarlaWheeledVehicle.h"
+#include "Vehicle/CarSimCarlaVehicle.h"
 #include "Vehicle/WheeledVehicleAIController.h"
 
 #include "Engine/CollisionProfile.h"
@@ -22,10 +23,16 @@ static bool IsSplineValid(const USplineComponent *SplineComponent)
 
 static AWheeledVehicleAIController *GetVehicleController(AActor *Actor)
 {
-  auto *Vehicle = (Actor->IsPendingKill() ? nullptr : Cast<ACarlaWheeledVehicle>(Actor));
-  return (Vehicle != nullptr ?
-         Cast<AWheeledVehicleAIController>(Vehicle->GetController()) :
-         nullptr);
+  if (Actor->IsPendingKill())
+    return nullptr;
+  auto CarlaVehicle = Cast<ACarlaWheeledVehicle>(Actor);
+  auto CarSimVehicle = Cast<ACarSimCarlaVehicle>(Actor);
+  if (CarlaVehicle)
+    return Cast<AWheeledVehicleAIController>(CarlaVehicle->GetController());
+  else if (CarSimVehicle)
+    return Cast<AWheeledVehicleAIController>(CarSimVehicle->GetController());
+  else
+    return nullptr;
 }
 
 static const USplineComponent *PickARoute(

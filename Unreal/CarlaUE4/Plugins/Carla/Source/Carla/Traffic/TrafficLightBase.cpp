@@ -8,13 +8,14 @@
 #include "TrafficLightBase.h"
 
 #include "Vehicle/CarlaWheeledVehicle.h"
+#include "Vehicle/CarSimCarlaVehicle.h"
 #include "Vehicle/WheeledVehicleAIController.h"
 
 // =============================================================================
 // -- Static local methods -----------------------------------------------------
 // =============================================================================
 
-static bool IsValid(const ACarlaWheeledVehicle *Vehicle)
+static bool IsValid(const APawn *Vehicle)
 {
   return ((Vehicle != nullptr) && !Vehicle->IsPendingKill());
 }
@@ -144,11 +145,26 @@ void ATrafficLightBase::SwitchTrafficLightState()
   }
 }
 
-void ATrafficLightBase::NotifyWheeledVehicle(ACarlaWheeledVehicle *Vehicle)
+void ATrafficLightBase::NotifyWheeledVehicle(APawn *Vehicle)
 {
-  if (IsValid(Vehicle))
+  auto CarlaVehicle = Cast<ACarlaWheeledVehicle>(Vehicle);
+  auto CarSimVehicle = Cast<ACarSimCarlaVehicle>(Vehicle);
+  if (CarlaVehicle && IsValid(Vehicle))
   {
-    auto Controller = Cast<AWheeledVehicleAIController>(Vehicle->GetController());
+    auto Controller = Cast<AWheeledVehicleAIController>(CarlaVehicle->GetController());
+    if (Controller != nullptr)
+    {
+      Controller->SetTrafficLightState(State);
+      if (State != ETrafficLightState::Green)
+      {
+        Vehicles.Add(Controller);
+        Controller->SetTrafficLight(this);
+      }
+    }
+  }
+  if (CarSimVehicle && IsValid(Vehicle))
+  {
+    auto Controller = Cast<AWheeledVehicleAIController>(CarSimVehicle->GetController());
     if (Controller != nullptr)
     {
       Controller->SetTrafficLightState(State);

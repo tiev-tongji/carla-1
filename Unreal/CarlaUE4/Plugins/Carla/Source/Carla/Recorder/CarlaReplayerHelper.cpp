@@ -134,12 +134,14 @@ bool CarlaReplayerHelper::SetActorAutopilot(const FActorView &ActorView, bool bE
   {
     return false;
   }
-  auto Vehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
-  if (Vehicle == nullptr)
+  auto CarlaVehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
+  auto CarSimVehicle = Cast<ACarSimCarlaVehicle>(ActorView.GetActor());
+  if (CarlaVehicle == nullptr && CarSimVehicle == nullptr)
   {
     return false;
   }
-  auto Controller = Cast<AWheeledVehicleAIController>(Vehicle->GetController());
+  auto Controller = CarlaVehicle ? Cast<AWheeledVehicleAIController>(CarlaVehicle->GetController())
+    : Cast<AWheeledVehicleAIController>(CarSimVehicle->GetController());
   if (Controller == nullptr)
   {
     return false;
@@ -299,8 +301,9 @@ void CarlaReplayerHelper::ProcessReplayerAnimVehicle(CarlaRecorderAnimVehicle Ve
   AActor *Actor = Episode->GetActorRegistry().Find(Vehicle.DatabaseId).GetActor();
   if (Actor && !Actor->IsPendingKill())
   {
-    auto Veh = Cast<ACarlaWheeledVehicle>(Actor);
-    if (Veh == nullptr)
+    auto CarlaVeh = Cast<ACarlaWheeledVehicle>(Actor);
+    auto CarSimVeh = Cast<ACarSimCarlaVehicle>(Actor);
+    if (CarlaVeh == nullptr && CarSimVeh == nullptr)
     {
       return;
     }
@@ -313,7 +316,8 @@ void CarlaReplayerHelper::ProcessReplayerAnimVehicle(CarlaRecorderAnimVehicle Ve
     Control.bReverse = (Vehicle.Gear < 0);
     Control.Gear = Vehicle.Gear;
     Control.bManualGearShift = false;
-    Veh->ApplyVehicleControl(Control, EVehicleInputPriority::User);
+    CarlaVeh ? CarlaVeh->ApplyVehicleControl(Control, EVehicleInputPriority::User)
+      : CarSimVeh->ApplyVehicleControl(Control, EVehicleInputPriority::User);
   }
 }
 

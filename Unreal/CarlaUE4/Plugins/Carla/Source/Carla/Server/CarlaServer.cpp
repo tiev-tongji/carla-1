@@ -11,6 +11,7 @@
 #include "Carla/Util/DebugShapeDrawer.h"
 #include "Carla/Util/NavigationMesh.h"
 #include "Carla/Vehicle/CarlaWheeledVehicle.h"
+#include "Carla/Vehicle/CarSimCarlaVehicle.h"
 #include "Carla/Walker/WalkerController.h"
 
 #include <compiler/disable-ue4-macros.h>
@@ -515,13 +516,14 @@ void FCarlaServer::FPimpl::BindActions()
     {
       RESPOND_ERROR("unable to get actor physics control: actor not found");
     }
-    auto Vehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
-    if (Vehicle == nullptr)
+    auto CarlaVehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
+    auto CarSimVehicle = Cast<ACarSimCarlaVehicle>(ActorView.GetActor());
+    if (CarlaVehicle == nullptr && CarSimVehicle == nullptr)
     {
       RESPOND_ERROR("unable to get actor physics control: actor is not a vehicle");
     }
 
-    return cr::VehiclePhysicsControl(Vehicle->GetVehiclePhysicsControl());
+    return cr::VehiclePhysicsControl(CarlaVehicle ? CarlaVehicle->GetVehiclePhysicsControl() : CarSimVehicle->GetVehiclePhysicsControl());
   };
 
   BIND_SYNC(apply_physics_control) << [this](
@@ -534,13 +536,15 @@ void FCarlaServer::FPimpl::BindActions()
     {
       RESPOND_ERROR("unable to apply actor physics control: actor not found");
     }
-    auto Vehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
-    if (Vehicle == nullptr)
+    auto CarlaVehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
+    auto CarSimVehicle = Cast<ACarSimCarlaVehicle>(ActorView.GetActor());
+    if (CarlaVehicle == nullptr && CarSimVehicle == nullptr)
     {
       RESPOND_ERROR("unable to apply actor physics control: actor is not a vehicle");
     }
 
-    Vehicle->ApplyVehiclePhysicsControl(FVehiclePhysicsControl(PhysicsControl));
+	CarlaVehicle ? CarlaVehicle->ApplyVehiclePhysicsControl(FVehiclePhysicsControl(PhysicsControl))
+		: CarSimVehicle->ApplyVehiclePhysicsControl(FVehiclePhysicsControl(PhysicsControl));
 
     return R<void>::Success();
   };
@@ -576,12 +580,14 @@ void FCarlaServer::FPimpl::BindActions()
     {
       RESPOND_ERROR("unable to apply control: actor not found");
     }
-    auto Vehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
-    if (Vehicle == nullptr)
+    auto CarlaVehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
+    auto CarSimVehicle = Cast<ACarSimCarlaVehicle>(ActorView.GetActor());
+    if (CarlaVehicle == nullptr && CarSimVehicle == nullptr)
     {
       RESPOND_ERROR("unable to apply control: actor is not a vehicle");
     }
-    Vehicle->ApplyVehicleControl(Control, EVehicleInputPriority::Client);
+  CarlaVehicle ? CarlaVehicle->ApplyVehicleControl(Control, EVehicleInputPriority::Client)
+    : CarSimVehicle->ApplyVehicleControl(Control, EVehicleInputPriority::Client);
     return R<void>::Success();
   };
 
@@ -643,12 +649,14 @@ void FCarlaServer::FPimpl::BindActions()
     {
       RESPOND_ERROR("unable to set autopilot: actor not found");
     }
-    auto Vehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
-    if (Vehicle == nullptr)
+    auto CarlaVehicle = Cast<ACarlaWheeledVehicle>(ActorView.GetActor());
+    auto CarSimVehicle = Cast<ACarSimCarlaVehicle>(ActorView.GetActor());
+    if (CarlaVehicle == nullptr && CarSimVehicle == nullptr)
     {
       RESPOND_ERROR("unable to set autopilot: actor does not support autopilot");
     }
-    auto Controller = Cast<AWheeledVehicleAIController>(Vehicle->GetController());
+    auto CarController = CarlaVehicle ? CarlaVehicle->GetController() : CarSimVehicle->GetController();
+    auto Controller = Cast<AWheeledVehicleAIController>(CarController);
     if (Controller == nullptr)
     {
       RESPOND_ERROR("unable to set autopilot: vehicle controller does not support autopilot");

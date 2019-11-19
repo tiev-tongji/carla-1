@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Carla/Vehicle/CarlaWheeledVehicle.h"
+#include "GameFramework/Pawn.h"
 
 #include "VehicleParameters.generated.h"
 
@@ -21,8 +22,9 @@ struct CARLA_API FVehicleParameters
   UPROPERTY(EditAnywhere, BlueprintReadWrite)
   FString Model;
 
+  /// include both CarlaWheeledVehicle and CarSimCarlaVehicle
   UPROPERTY(EditAnywhere, BlueprintReadWrite)
-  TSubclassOf<ACarlaWheeledVehicle> Class;
+  TSubclassOf<APawn> Class;
 
   UPROPERTY(EditAnywhere, BlueprintReadWrite)
   int32 NumberOfWheels = 4;

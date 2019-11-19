@@ -12,7 +12,6 @@
 
 #include "TrafficLightBase.generated.h"
 
-class ACarlaWheeledVehicle;
 class AWheeledVehicleAIController;
 
 UCLASS()
@@ -52,7 +51,7 @@ public:
   void SwitchTrafficLightState();
 
   UFUNCTION(Category = "Traffic Light", BlueprintCallable)
-  void NotifyWheeledVehicle(ACarlaWheeledVehicle *Vehicle);
+  void NotifyWheeledVehicle(APawn *Vehicle);
 
   UFUNCTION(Category = "Traffic Light", BlueprintCallable)
   void SetGreenTime(float InGreenTime);

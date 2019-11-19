@@ -5,6 +5,7 @@
 #include "Carla.h"
 #include "FrictionTrigger.h"
 #include "Vehicle/CarlaWheeledVehicle.h"
+#include "Vehicle/CarSimCarlaVehicle.h"
 
 AFrictionTrigger::AFrictionTrigger(const FObjectInitializer &ObjectInitializer)
   : Super(ObjectInitializer)
@@ -37,16 +38,25 @@ void AFrictionTrigger::Init()
 
 void AFrictionTrigger::UpdateWheelsFriction(AActor *OtherActor, float NewFriction)
 {
-  ACarlaWheeledVehicle *Vehicle = Cast<ACarlaWheeledVehicle>(OtherActor);
-  if (Vehicle != nullptr)
+  auto CarlaVehicle = Cast<ACarlaWheeledVehicle>(OtherActor);
+  auto CarSimVehicle = Cast<ACarSimCarlaVehicle>(OtherActor);
+  if (CarlaVehicle != nullptr)
   {
-    TArray<float> WheelsFrictionScale = Vehicle->GetWheelsFrictionScale();
+    TArray<float> WheelsFrictionScale = CarlaVehicle->GetWheelsFrictionScale();
     for (auto &FrictionScale : WheelsFrictionScale)
     {
       FrictionScale = NewFriction;
     }
-
-    Vehicle->SetWheelsFrictionScale(WheelsFrictionScale);
+    CarlaVehicle->SetWheelsFrictionScale(WheelsFrictionScale);
+  }
+  if (CarSimVehicle != nullptr)
+  {
+    TArray<float> WheelsFrictionScale = CarSimVehicle->GetWheelsFrictionScale();
+    for (auto &FrictionScale : WheelsFrictionScale)
+    {
+      FrictionScale = NewFriction;
+    }
+    CarSimVehicle->SetWheelsFrictionScale(WheelsFrictionScale);
   }
 }
 

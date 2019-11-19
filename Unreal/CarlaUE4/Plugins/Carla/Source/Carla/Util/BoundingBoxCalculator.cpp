@@ -9,6 +9,7 @@
 
 #include "Carla/Traffic/TrafficSignBase.h"
 #include "Carla/Vehicle/CarlaWheeledVehicle.h"
+#include "Carla/Vehicle/CarSimCarlaVehicle.h"
 
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
@@ -18,11 +19,18 @@ FBoundingBox UBoundingBoxCalculator::GetActorBoundingBox(const AActor *Actor)
   if (Actor != nullptr)
   {
     // Vehicle.
-    auto Vehicle = Cast<ACarlaWheeledVehicle>(Actor);
-    if (Vehicle != nullptr)
+    auto CarlaVehicle = Cast<ACarlaWheeledVehicle>(Actor);
+    if (CarlaVehicle != nullptr)
     {
-      FVector Origin = Vehicle->GetVehicleBoundingBoxTransform().GetTranslation();
-      FVector Extent = Vehicle->GetVehicleBoundingBoxExtent();
+      FVector Origin = CarlaVehicle->GetVehicleBoundingBoxTransform().GetTranslation();
+      FVector Extent = CarlaVehicle->GetVehicleBoundingBoxExtent();
+      return {Origin, Extent};
+    }
+    auto CarSimVehicle = Cast<ACarSimCarlaVehicle>(Actor);
+    if (CarSimVehicle != nullptr)
+    {
+      FVector Origin = CarSimVehicle->GetVehicleBoundingBoxTransform().GetTranslation();
+      FVector Extent = CarSimVehicle->GetVehicleBoundingBoxExtent();
       return {Origin, Extent};
     }
     // Walker.

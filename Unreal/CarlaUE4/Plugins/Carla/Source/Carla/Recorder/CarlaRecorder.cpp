@@ -8,6 +8,8 @@
 #include "Carla/Actor/ActorDescription.h"
 #include "Carla/Walker/WalkerControl.h"
 #include "Carla/Walker/WalkerController.h"
+#include "Carla/Vehicle/CarlaWheeledVehicle.h"
+#include "Carla/Vehicle/CarSimCarlaVehicle.h"
 
 #include "CarlaRecorder.h"
 #include "CarlaReplayerHelper.h"
@@ -138,13 +140,14 @@ void ACarlaRecorder::AddVehicleAnimation(FActorView &View)
     return;
   }
 
-  auto Vehicle = Cast<ACarlaWheeledVehicle>(Actor);
-  if (Vehicle == nullptr)
+  auto CarlaVehicle = Cast<ACarlaWheeledVehicle>(Actor);
+  auto CarSimVehicle = Cast<ACarSimCarlaVehicle>(Actor);
+  if (CarlaVehicle == nullptr && CarSimVehicle == nullptr)
   {
     return;
   }
 
-  FVehicleControl Control = Vehicle->GetVehicleControl();
+  FVehicleControl Control = CarlaVehicle ? CarlaVehicle->GetVehicleControl() : CarSimVehicle->GetVehicleControl();
 
   // save
   CarlaRecorderAnimVehicle Record;

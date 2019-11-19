@@ -13,9 +13,11 @@
 #include "Traffic/TrafficLightState.h"
 #include "Vehicle/VehicleControl.h"
 
+#include "Vehicle/CarlaWheeledVehicle.h"
+#include "Vehicle/CarSimCarlaVehicle.h"
+
 #include "WheeledVehicleAIController.generated.h"
 
-class ACarlaWheeledVehicle;
 class URandomEngine;
 class URoadMap;
 
@@ -65,12 +67,12 @@ public:
   }
 
   UFUNCTION(Category = "Wheeled Vehicle Controller", BlueprintCallable)
-  ACarlaWheeledVehicle *GetPossessedVehicle()
+  APawn *GetPossessedVehicle()
   {
     return Vehicle;
   }
 
-  const ACarlaWheeledVehicle *GetPossessedVehicle() const
+  const APawn *GetPossessedVehicle() const
   {
     return Vehicle;
   }
@@ -235,7 +237,9 @@ private:
 private:
 
   UPROPERTY()
-  ACarlaWheeledVehicle *Vehicle = nullptr;
+  APawn *Vehicle = nullptr;
+  ACarlaWheeledVehicle *CarlaVehicle = nullptr;
+  ACarSimCarlaVehicle *CarSimVehicle = nullptr;
 
   UPROPERTY()
   URoadMap *RoadMap = nullptr;

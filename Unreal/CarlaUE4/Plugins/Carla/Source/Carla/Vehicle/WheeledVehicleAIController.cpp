@@ -10,10 +10,12 @@
 #include "MapGen/RoadMap.h"
 #include "Traffic/RoutePlanner.h"
 #include "Vehicle/CarlaWheeledVehicle.h"
+#include "Vehicle/CarSimCarlaVehicle.h"
 
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
 #include "WheeledVehicleMovementComponent.h"
+#include "CarSimMovementComponent.h"
 
 // =============================================================================
 // -- Static local methods -----------------------------------------------------
@@ -39,7 +41,7 @@ static bool RayCast(const AActor &Actor, const FVector &Start, const FVector &En
   return Success && OutHit.bBlockingHit;
 }
 
-static bool IsThereAnObstacleAhead(
+static bool IsThereAnObstacleAheadCarla(
     const ACarlaWheeledVehicle &Vehicle,
     const float Speed,
     const FVector &Direction)
@@ -61,6 +63,36 @@ static bool IsThereAnObstacleAhead(
 
   const FVector StartLeft = StartCenter +
       (FVector(-ForwardVector.Y, ForwardVector.X, ForwardVector.Z) * 100.0f);
+  const FVector EndLeft = StartLeft + NormDirection * (Distance + VehicleBounds.X / 2.0f);
+
+  return
+    RayCast(Vehicle, StartCenter, EndCenter) ||
+    RayCast(Vehicle, StartRight, EndRight) ||
+    RayCast(Vehicle, StartLeft, EndLeft);
+}
+
+static bool IsThereAnObstacleAheadCarSim(
+  const ACarSimCarlaVehicle &Vehicle,
+  const float Speed,
+  const FVector &Direction)
+{
+  const auto ForwardVector = Vehicle.GetVehicleOrientation();
+  const auto VehicleBounds = Vehicle.GetVehicleBoundingBoxExtent();
+
+  FVector NormDirection = Direction.GetSafeNormal();
+
+  const float Distance = std::max(50.0f, Speed * Speed); // why?
+
+  const FVector StartCenter = Vehicle.GetActorLocation() +
+    (ForwardVector * (250.0f + VehicleBounds.X / 2.0f)) + FVector(0.0f, 0.0f, 50.0f);
+  const FVector EndCenter = StartCenter + NormDirection * (Distance + VehicleBounds.X / 2.0f);
+
+  const FVector StartRight = StartCenter +
+    (FVector(ForwardVector.Y, -ForwardVector.X, ForwardVector.Z) * 100.0f);
+  const FVector EndRight = StartRight + NormDirection * (Distance + VehicleBounds.X / 2.0f);
+
+  const FVector StartLeft = StartCenter +
+    (FVector(-ForwardVector.Y, ForwardVector.X, ForwardVector.Z) * 100.0f);
   const FVector EndLeft = StartLeft + NormDirection * (Distance + VehicleBounds.X / 2.0f);
 
   return
@@ -106,10 +138,22 @@ void AWheeledVehicleAIController::OnPossess(APawn *aPawn)
     UE_LOG(LogCarla, Error, TEXT("Controller already possessing a vehicle!"));
     return;
   }
-  Vehicle = Cast<ACarlaWheeledVehicle>(aPawn);
-  check(Vehicle != nullptr);
-  MaximumSteerAngle = Vehicle->GetMaximumSteerAngle();
-  check(MaximumSteerAngle > 0.0f);
+  if (Cast<ACarlaWheeledVehicle>(aPawn))
+  {
+    CarlaVehicle = Cast<ACarlaWheeledVehicle>(aPawn);
+    Vehicle = CarlaVehicle;
+    check(Vehicle != nullptr);
+    MaximumSteerAngle = CarlaVehicle->GetMaximumSteerAngle();
+    check(MaximumSteerAngle > 0.0f);
+  }
+  else if (Cast<ACarSimCarlaVehicle>(aPawn))
+  {
+    CarSimVehicle = Cast<ACarSimCarlaVehicle>(aPawn);
+    Vehicle = CarSimVehicle;
+    check(Vehicle != nullptr);
+    MaximumSteerAngle = CarSimVehicle->GetMaximumSteerAngle();
+    check(MaximumSteerAngle > 0.0f);
+  }
   ConfigureAutopilot(bAutopilotEnabled);
 
   if (RoadMap == nullptr)
@@ -134,17 +178,30 @@ void AWheeledVehicleAIController::Tick(const float DeltaTime)
   {
     return;
   }
-
-  if (bAutopilotEnabled)
+  if (CarlaVehicle)
   {
-    Vehicle->ApplyVehicleControl(TickAutopilotController(), EVehicleInputPriority::Autopilot);
+    if (bAutopilotEnabled)
+    {
+      CarlaVehicle->ApplyVehicleControl(TickAutopilotController(), EVehicleInputPriority::Autopilot);
+    }
+    else if (!bControlIsSticky)
+    {
+      CarlaVehicle->ApplyVehicleControl(FVehicleControl{}, EVehicleInputPriority::Relaxation);
+    }
+    CarlaVehicle->FlushVehicleControl();
   }
-  else if (!bControlIsSticky)
+  else
   {
-    Vehicle->ApplyVehicleControl(FVehicleControl{}, EVehicleInputPriority::Relaxation);
+    if (bAutopilotEnabled)
+    {
+      CarSimVehicle->ApplyVehicleControl(TickAutopilotController(), EVehicleInputPriority::Autopilot);
+    }
+    else if (!bControlIsSticky)
+    {
+      CarSimVehicle->ApplyVehicleControl(FVehicleControl{}, EVehicleInputPriority::Relaxation);
+    }
+    CarSimVehicle->FlushVehicleControl();
   }
-
-  Vehicle->FlushVehicleControl();
 }
 
 // =============================================================================
@@ -154,19 +211,39 @@ void AWheeledVehicleAIController::Tick(const float DeltaTime)
 void AWheeledVehicleAIController::ConfigureAutopilot(const bool Enable, const bool KeepState)
 {
   bAutopilotEnabled = Enable;
-  if (!KeepState)
+  if (CarlaVehicle)
   {
-    // Reset state.
-    Vehicle->SetSteeringInput(0.0f);
-    Vehicle->SetThrottleInput(0.0f);
-    Vehicle->SetBrakeInput(0.0f);
-    Vehicle->SetReverse(false);
-    Vehicle->SetHandbrakeInput(false);
-    ClearQueue(TargetLocations);
-    Vehicle->SetAIVehicleState(
+    if (!KeepState)
+    {
+      // Reset state.
+      CarlaVehicle->SetSteeringInput(0.0f);
+      CarlaVehicle->SetThrottleInput(0.0f);
+      CarlaVehicle->SetBrakeInput(0.0f);
+      CarlaVehicle->SetReverse(false);
+      CarlaVehicle->SetHandbrakeInput(false);
+      ClearQueue(TargetLocations);
+      CarlaVehicle->SetAIVehicleState(
         bAutopilotEnabled ?
         ECarlaWheeledVehicleState::FreeDriving :
         ECarlaWheeledVehicleState::AutopilotOff);
+    }
+  }
+  else
+  {
+    if (!KeepState)
+    {
+      // Reset state.
+      CarSimVehicle->SetSteeringInput(0.0f);
+      CarSimVehicle->SetThrottleInput(0.0f);
+      CarSimVehicle->SetBrakeInput(0.0f);
+      CarSimVehicle->SetReverse(false);
+      CarSimVehicle->SetHandbrakeInput(false);
+      ClearQueue(TargetLocations);
+      CarSimVehicle->SetAIVehicleState(
+        bAutopilotEnabled ?
+        ECarlaWheeledVehicleState::FreeDriving :
+        ECarlaWheeledVehicleState::AutopilotOff);
+    }
   }
 
   TrafficLightState = ETrafficLightState::Green;
@@ -239,26 +316,49 @@ FVehicleControl AWheeledVehicleAIController::TickAutopilotController()
   else
   {
     Steering = RoadMap != nullptr ? CalcStreeringValue(Direction) : 0.0f;
-    Direction = Vehicle->GetVehicleTransform().GetRotation().Rotator().Vector();
+    Direction = Vehicle->GetActorTransform().GetRotation().Rotator().Vector();
   }
-
-  // Speed in km/h.
-  const auto Speed = Vehicle->GetVehicleForwardSpeed() * 0.036f;
 
   float Throttle;
-  if (TrafficLightState != ETrafficLightState::Green)
+  if (CarlaVehicle)
   {
-    Vehicle->SetAIVehicleState(ECarlaWheeledVehicleState::WaitingForRedLight);
-    Throttle = Stop(Speed);
-  }
-  else if (IsThereAnObstacleAhead(*Vehicle, Speed, Direction))
-  {
-    Vehicle->SetAIVehicleState(ECarlaWheeledVehicleState::ObstacleAhead);
-    Throttle = Stop(Speed);
+    // Speed in km/h.
+    const auto Speed = CarlaVehicle->GetVehicleForwardSpeed() * 0.036f;
+
+    if (TrafficLightState != ETrafficLightState::Green)
+    {
+      CarlaVehicle->SetAIVehicleState(ECarlaWheeledVehicleState::WaitingForRedLight);
+      Throttle = Stop(Speed);
+    }
+    else if (IsThereAnObstacleAheadCarla(*CarlaVehicle, Speed, Direction))
+    {
+      CarlaVehicle->SetAIVehicleState(ECarlaWheeledVehicleState::ObstacleAhead);
+      Throttle = Stop(Speed);
+    }
+    else
+    {
+      Throttle = Move(Speed);
+    }
   }
   else
   {
-    Throttle = Move(Speed);
+    // Speed in km/h.
+    const auto Speed = CarSimVehicle->GetVehicleForwardSpeed() * 0.036f;
+
+    if (TrafficLightState != ETrafficLightState::Green)
+    {
+      CarSimVehicle->SetAIVehicleState(ECarlaWheeledVehicleState::WaitingForRedLight);
+      Throttle = Stop(Speed);
+    }
+    else if (IsThereAnObstacleAheadCarSim(*CarSimVehicle, Speed, Direction))
+    {
+      CarSimVehicle->SetAIVehicleState(ECarlaWheeledVehicleState::ObstacleAhead);
+      Throttle = Stop(Speed);
+    }
+    else
+    {
+      Throttle = Move(Speed);
+    }
   }
 
   FVehicleControl AutopilotControl;
@@ -280,75 +380,190 @@ FVehicleControl AWheeledVehicleAIController::TickAutopilotController()
 
 float AWheeledVehicleAIController::GoToNextTargetLocation(FVector &Direction)
 {
-  // Get middle point between the two front wheels.
-  const auto CurrentLocation = [&]() {
-    const auto &Wheels = Vehicle->GetVehicleMovementComponent()->Wheels;
-    check((Wheels.Num() > 1) && (Wheels[0u] != nullptr) && (Wheels[1u] != nullptr));
-    return (Wheels[0u]->Location + Wheels[1u]->Location) / 2.0f;
-  } ();
-
-  const auto Target = [&]() {
-    const auto &Result = TargetLocations.front();
-    return FVector{Result.X, Result.Y, CurrentLocation.Z};
-  } ();
-
-  if (Target.Equals(CurrentLocation, 200.0f))
+  if (CarlaVehicle)
   {
-    TargetLocations.pop();
-    if (!TargetLocations.empty())
+    // Get middle point between the two front wheels.
+    const auto CurrentLocation = [&]() {
+      const auto &Wheels = CarlaVehicle->GetVehicleMovementComponent()->Wheels;
+      check((Wheels.Num() > 1) && (Wheels[0u] != nullptr) && (Wheels[1u] != nullptr));
+      return (Wheels[0u]->Location + Wheels[1u]->Location) / 2.0f;
+    } ();
+
+    const auto Target = [&]() {
+      const auto &Result = TargetLocations.front();
+      return FVector{ Result.X, Result.Y, CurrentLocation.Z };
+    } ();
+
+    if (Target.Equals(CurrentLocation, 200.0f))
     {
-      return GoToNextTargetLocation(Direction);
+      TargetLocations.pop();
+      if (!TargetLocations.empty())
+      {
+        return GoToNextTargetLocation(Direction);
+      }
+      else
+      {
+        return RoadMap != nullptr ? CalcStreeringValue(Direction) : 0.0f;
+      }
+    }
+
+    Direction = (Target - CurrentLocation).GetSafeNormal();
+
+    const FVector &Forward = GetPawn()->GetActorForwardVector();
+
+    float dirAngle = Direction.UnitCartesianToSpherical().Y;
+    float actorAngle = Forward.UnitCartesianToSpherical().Y;
+
+    dirAngle *= (180.0f / PI);
+    actorAngle *= (180.0 / PI);
+
+    float angle = dirAngle - actorAngle;
+
+    if (angle > 180.0f)
+    {
+      angle -= 360.0f;
+    }
+    else if (angle < -180.0f)
+    {
+      angle += 360.0f;
+    }
+
+    float Steering = 0.0f;
+    if (angle < -MaximumSteerAngle)
+    {
+      Steering = -1.0f;
+    }
+    else if (angle > MaximumSteerAngle)
+    {
+      Steering = 1.0f;
     }
     else
     {
-      return RoadMap != nullptr ? CalcStreeringValue(Direction) : 0.0f;
+      Steering += angle / MaximumSteerAngle;
     }
-  }
 
-  Direction = (Target - CurrentLocation).GetSafeNormal();
-
-  const FVector &Forward = GetPawn()->GetActorForwardVector();
-
-  float dirAngle = Direction.UnitCartesianToSpherical().Y;
-  float actorAngle = Forward.UnitCartesianToSpherical().Y;
-
-  dirAngle *= (180.0f / PI);
-  actorAngle *= (180.0 / PI);
-
-  float angle = dirAngle - actorAngle;
-
-  if (angle > 180.0f)
-  {
-    angle -= 360.0f;
-  }
-  else if (angle < -180.0f)
-  {
-    angle += 360.0f;
-  }
-
-  float Steering = 0.0f;
-  if (angle < -MaximumSteerAngle)
-  {
-    Steering = -1.0f;
-  }
-  else if (angle > MaximumSteerAngle)
-  {
-    Steering = 1.0f;
+    CarlaVehicle->SetAIVehicleState(ECarlaWheeledVehicleState::FollowingFixedRoute);
+    return Steering;
   }
   else
   {
-    Steering += angle / MaximumSteerAngle;
-  }
+    UCarSimMovementComponent *vehicleMovement = CarSimVehicle->GetCarSimMovement();
 
-  Vehicle->SetAIVehicleState(ECarlaWheeledVehicleState::FollowingFixedRoute);
-  return Steering;
+    // GetWheelTransform：axleIndex为0、1分别代表前轮、后轮，axleSide为0、1分别代表左轮、右轮
+    // 同为前轮/后轮时，左轮与右轮的Roll相反
+    // GetTireTransform：tire(ij0)与tire(ij1)完全相同，且与wheel(ij)相同
+    /*
+    int numUnits = vehicleMovement->GetNumUnits();	// 1 unit
+    int numAxles = vehicleMovement->GetNumAxles(0);	// first unit has 2 axles
+    UE_LOG(LogCarla, Log, TEXT("NumUnits: %d, First unit has NumAxles: %d"), numUnits, numAxles);
+
+    int i, j, k;
+    FTransform t;
+    FString str;
+    for (i = 0; i < 2; i++)
+      for (j = 0; j < 2; j++)
+      {
+        t = vehicleMovement->GetWheelTransform(0, i, j);
+        str = t.ToHumanReadableString();
+        UE_LOG(LogCarla, Log, TEXT("Wheel%d%d: %s"), i, j, *str);
+      }
+    for (i = 0; i < 2; i++)
+      for (j = 0; j < 2; j++)
+        for (k = 0; k < 2; k++)
+        {
+          t = vehicleMovement->GetTireTransform(0, i, j, k);
+          str = t.ToHumanReadableString();
+          UE_LOG(LogCarla, Log, TEXT("Tire%d%d%d: %s\n"), i, j, k, *str);
+        }
+    */
+
+    // Get middle point between the two front wheels.
+    const auto CurrentLocation = [&]() {
+      check(vehicleMovement->GetNumUnits() > 0 && vehicleMovement->GetNumAxles(0) > 1);
+      FTransform t[2];
+      t[0] = vehicleMovement->GetWheelTransform(0, 0, 0);
+      t[1] = vehicleMovement->GetWheelTransform(0, 0, 1);
+      return (t[0].GetLocation() + t[1].GetLocation()) / 2.0f;
+      /*
+      const auto &Wheels = Vehicle->GetVehicleMovementComponent()->Wheels;
+      check((Wheels.Num() > 1) && (Wheels[0u] != nullptr) && (Wheels[1u] != nullptr));
+      return (Wheels[0u]->Location + Wheels[1u]->Location) / 2.0f;
+      */
+    } ();
+
+    const auto Target = [&]() {
+      const auto &Result = TargetLocations.front();
+      return FVector{ Result.X, Result.Y, CurrentLocation.Z };
+    } ();
+
+    if (Target.Equals(CurrentLocation, 200.0f))
+    {
+      TargetLocations.pop();
+      if (!TargetLocations.empty())
+      {
+        return GoToNextTargetLocation(Direction);
+      }
+      else
+      {
+        return RoadMap != nullptr ? CalcStreeringValue(Direction) : 0.0f;
+      }
+    }
+
+    Direction = (Target - CurrentLocation).GetSafeNormal();
+
+    const FVector &Forward = GetPawn()->GetActorForwardVector();
+
+    float dirAngle = Direction.UnitCartesianToSpherical().Y;
+    float actorAngle = Forward.UnitCartesianToSpherical().Y;
+
+    dirAngle *= (180.0f / PI);
+    actorAngle *= (180.0 / PI);
+
+    float angle = dirAngle - actorAngle;
+
+    if (angle > 180.0f)
+    {
+      angle -= 360.0f;
+    }
+    else if (angle < -180.0f)
+    {
+      angle += 360.0f;
+    }
+
+    float Steering = 0.0f;
+    if (angle < -MaximumSteerAngle)
+    {
+      Steering = -1.0f;
+    }
+    else if (angle > MaximumSteerAngle)
+    {
+      Steering = 1.0f;
+    }
+    else
+    {
+      Steering += angle / MaximumSteerAngle;
+    }
+
+    CarSimVehicle->SetAIVehicleState(ECarlaWheeledVehicleState::FollowingFixedRoute);
+    return Steering;
+  }
 }
 
 float AWheeledVehicleAIController::CalcStreeringValue(FVector &direction)
 {
   float steering = 0;
-  FVector BoxExtent = Vehicle->GetVehicleBoundingBoxExtent();
-  FVector forward = Vehicle->GetActorForwardVector();
+  FVector BoxExtent;
+  FVector forward;
+  if (CarlaVehicle)
+  {
+    BoxExtent = CarlaVehicle->GetVehicleBoundingBoxExtent();
+    forward = CarlaVehicle->GetActorForwardVector();
+  }
+  else
+  {
+    BoxExtent = CarSimVehicle->GetVehicleBoundingBoxExtent();
+    forward = CarSimVehicle->GetActorForwardVector();
+  }
 
   FVector rightSensorPosition(BoxExtent.X / 2.0f, (BoxExtent.Y / 2.0f) + 100.0f, 0.0f);
   FVector leftSensorPosition(BoxExtent.X / 2.0f, -(BoxExtent.Y / 2.0f) - 100.0f, 0.0f);
@@ -477,7 +692,8 @@ float AWheeledVehicleAIController::CalcStreeringValue(FVector &direction)
     }
   }
 
-  Vehicle->SetAIVehicleState(ECarlaWheeledVehicleState::FreeDriving);
+  CarlaVehicle ? CarlaVehicle->SetAIVehicleState(ECarlaWheeledVehicleState::FreeDriving)
+    : CarSimVehicle->SetAIVehicleState(ECarlaWheeledVehicleState::FreeDriving);
   return steering;
 }
 
