@@ -60,8 +60,8 @@ def main():
     argparser.add_argument(
         '--filterv',
         metavar='PATTERN',
-        default='vehicle.*',
-        help='vehicles filter (default: "vehicle.*")')
+        default='vehicle.physx.*',
+        help='vehicles filter (default: "vehicle.physx.*")')
     argparser.add_argument(
         '--filterw',
         metavar='PATTERN',

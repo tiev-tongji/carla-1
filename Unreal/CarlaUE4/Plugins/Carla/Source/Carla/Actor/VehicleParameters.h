@@ -27,6 +27,9 @@ struct CARLA_API FVehicleParameters
   TSubclassOf<APawn> Class;
 
   UPROPERTY(EditAnywhere, BlueprintReadWrite)
+  bool IsCarSim;
+
+  UPROPERTY(EditAnywhere, BlueprintReadWrite)
   int32 NumberOfWheels = 4;
 
   /// (OPTIONAL) Use for custom classification of vehicles.

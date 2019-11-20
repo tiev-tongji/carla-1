@@ -629,7 +629,10 @@ void UActorBlueprintFunctionLibrary::MakeVehicleDefinition(
     FActorDefinition &Definition)
 {
   /// @todo We need to validate here the params.
-  FillIdAndTags(Definition, TEXT("vehicle"), Parameters.Make, Parameters.Model);
+  if (Parameters.IsCarSim)
+    FillIdAndTags(Definition, TEXT("vehicle"), TEXT("carsim"), Parameters.Make, Parameters.Model);
+  else
+    FillIdAndTags(Definition, TEXT("vehicle"), TEXT("physx"), Parameters.Make, Parameters.Model);
   AddRecommendedValuesForActorRoleName(Definition,
       {TEXT("autopilot"), TEXT("scenario"), TEXT("ego_vehicle")});
   Definition.Class = Parameters.Class;
