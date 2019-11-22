@@ -153,7 +153,13 @@ static carla::Buffer FWorldObserver_Serialize(
   {
     check(View.IsValid());
     constexpr float TO_METERS = 1e-2;
-    const auto Velocity = TO_METERS * View.GetActor()->GetVelocity();
+    // default physics model is disabled for CarSim vehicles, so can't normally get velocity
+    FVector Velocity;
+    auto CarSimVehicle = Cast<ACarSimCarlaVehicle>(View.GetActor());
+    if (CarSimVehicle)
+      Velocity = TO_METERS * CarSimVehicle->GetVehicleForwardSpeed() * CarSimVehicle->GetVehicleOrientation();
+    else
+      Velocity = TO_METERS * View.GetActor()->GetVelocity();
 
     ActorDynamicState info = {
       View.GetActorId(),
