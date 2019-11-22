@@ -127,7 +127,7 @@ float ACarSimCarlaVehicle::GetMaximumSteerAngle() const
 	float strStop = (strStopR - strStopL) * 180 / PI;	// 弧度转角度
 	UE_LOG(LogCarla, Log, TEXT("Steer stop: %f %f %f"), strStopL, strStopR, strStop);
 	// 问题是，CarSim车辆实际转向能力似乎比较差，此返回值调小才行
-	return 80;
+	return strStop;
 }
 
 // =============================================================================
