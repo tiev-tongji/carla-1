@@ -1,0 +1,17 @@
+servers:
+  - host: 192.168.3.34
+    port: 2000
+  - host: 192.168.3.43
+    port: 2000
+  - host: 192.168.3.32
+    port: 2000
+
+# sumo:
+#  - host: 192.168.3.34
+#    port: 2000
+
+actorlights: false
+actorcolor: false
+trafficlights: false
+weather: null
+steplength: 0.05
